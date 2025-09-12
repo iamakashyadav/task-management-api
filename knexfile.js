@@ -1,3 +1,7 @@
+
+import dotenv from 'dotenv';
+dotenv.config();
+
 export default {
   development: {
     client: 'mysql2',
@@ -12,8 +16,8 @@ export default {
       directory: './src/migrations'
     },
     pool: {
-      min: process.env.DB_POOL_MIN,
-      max: process.env.DB_POOL_MAX,
+      min: Number(process.env.DB_POOL_MIN),
+      max: Number(process.env.DB_POOL_MAX),
       acquireTimeoutMillis: 30000,
       createTimeoutMillis: 30000,
       destroyTimeoutMillis: 5000,

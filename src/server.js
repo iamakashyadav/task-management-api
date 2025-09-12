@@ -12,7 +12,7 @@ import { isProd } from './helper.js';
 import requestId from './middlewares/requestId.js';
 import logger from './middlewares/logger.js';
 
-
+console.log(process.env.DB_HOST);
 const app = express();
 
 // Middleware
