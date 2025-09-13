@@ -1,18 +1,15 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import knexLib from 'knex';
 import ConflictError from "../errors/conflictError.js";
 import AuthenticationError from "../errors/authenticationError.js";
-import knexConfig from "../../knexfile.js";
 import { JWT_SECRET } from '../constants.js';
-
-const knex = knexLib(knexConfig.development);
+import db from '../db/connection.js';
 
 const register = async (req, res) => {
     const { name, email, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await knex('users').where({ email }).first();
+    const existingUser = await db('users').where({ email }).first();
     if (existingUser) {
         throw new ConflictError('Email already registered');
     }
@@ -21,13 +18,13 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const [userId] = await knex('users').insert({
+    const [userId] = await db('users').insert({
         name,
         email,
         password: hashedPassword
     });
 
-    const newUser = await knex('users')
+    const newUser = await db('users')
         .select('id', 'name', 'email', 'created_at')
         .where({ id: userId })
         .first();
@@ -42,7 +39,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     const { email, password } = req.body;
 
-    const user = await knex('users').where({ email }).first();
+    const user = await db('users').where({ email }).first();
     
     if (!user) {
         throw new AuthenticationError('Invalid credentials');
@@ -75,7 +72,7 @@ const updateProfile = async (req, res) => {
 
     // Check if email is already taken by another user
     if (email) {
-        const existingUser = await knex('users')
+        const existingUser = await db('users')
         .where({ email })
         .andWhere('id', '!=', req.user.id)
         .first();
@@ -85,15 +82,15 @@ const updateProfile = async (req, res) => {
         }
     }
 
-    const updateData = { updated_at: knex.fn.now() };
+    const updateData = { updated_at: db.fn.now() };
     if (name) updateData.name = name;
     if (email) updateData.email = email;
 
-    await knex('users')
+    await db('users')
         .where({ id: req.user.id })
         .update(updateData);
 
-    const updatedUser = await knex('users')
+    const updatedUser = await db('users')
         .select('id', 'name', 'email', 'updated_at')
         .where({ id: req.user.id })
         .first();

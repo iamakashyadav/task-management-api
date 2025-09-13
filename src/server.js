@@ -11,8 +11,8 @@ import authenticate from './middlewares/authenticate.js';
 import { isProd } from './helper.js';
 import requestId from './middlewares/requestId.js';
 import logger from './middlewares/logger.js';
+import { testDatabaseConnection } from './db/connection.js';
 
-console.log(process.env.DB_HOST);
 const app = express();
 
 // Middleware
@@ -51,9 +51,22 @@ app.use('*', (req, res) => {
 app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${isProd() ? 'Production' : 'development'}`);
-});
 
-export default app;
+// Start server only after successful database connection
+const startServer = async () => {
+  try {
+    // Test database connection first
+    await testDatabaseConnection();
+    
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${isProd() ? 'Production' : 'Development'}`);
+    });
+
+  } catch (error) {
+    console.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer();

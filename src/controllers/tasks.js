@@ -1,15 +1,12 @@
-import knexLib from 'knex';
 import ValidationError from "../errors/validation.js";
 import ConflictError from "../errors/conflictError.js";
-import knexConfig from "../../knexfile.js";
+import db from '../db/connection.js';
 
-const knex = knexLib(knexConfig.development);
-
-const store = async (req, res, next) => {
+const store = async (req, res) => {
     const { title, description, status } = req.body;
   
     // Check for duplicate title for this user
-    const existingTask = await knex('tasks')
+    const existingTask = await db('tasks')
       .where({ user_id: req.user.id, title: title.trim() })
       .first();
   
@@ -17,14 +14,14 @@ const store = async (req, res, next) => {
       throw new ConflictError('Task title must be unique. You already have a task with this title.');
     }
   
-    const [taskId] = await knex('tasks').insert({
+    const [taskId] = await db('tasks').insert({
       user_id: req.user.id,
       title: title.trim(),
       description: description || null,
       status: status || 'pending'
     });
   
-    const newTask = await knex('tasks').where({ id: taskId }).first();
+    const newTask = await db('tasks').where({ id: taskId }).first();
   
     res.status(201).json({
       message: 'Task created successfully',
@@ -38,7 +35,7 @@ const getAll = async (req, res) => {
   const status = req.query.status;
   const search = req.query.search;
 
-  let query = knex('tasks').where({ user_id: req.user.id });
+  let query = db('tasks').where({ user_id: req.user.id });
 
   // Apply filters
   if (status) {
@@ -85,7 +82,7 @@ const getById = async (req, res) => {
     throw new ValidationError('Invalid task ID');
   }
 
-  const task = await knex('tasks')
+  const task = await db('tasks')
     .where({ id: parseInt(id), user_id: req.user.id })
     .first();
 
@@ -104,7 +101,7 @@ const update = async (req, res) => {
     throw new ValidationError('Invalid task ID');
   }
 
-  const task = await knex('tasks')
+  const task = await db('tasks')
     .where({ id: parseInt(id), user_id: req.user.id })
     .first();
 
@@ -114,7 +111,7 @@ const update = async (req, res) => {
 
   // Check for duplicate title if title is being updated
   if (title && title.trim() !== task.title) {
-    const existingTask = await knex('tasks')
+    const existingTask = await db('tasks')
       .where({ user_id: req.user.id, title: title.trim() })
       .whereNot('id', parseInt(id))
       .first();
@@ -125,18 +122,18 @@ const update = async (req, res) => {
   }
 
   const updateData = {
-    updated_at: knex.fn.now()
+    updated_at: db.fn.now()
   };
 
   if (title !== undefined) updateData.title = title.trim();
   if (description !== undefined) updateData.description = description;
   if (status !== undefined) updateData.status = status;
 
-  await knex('tasks')
+  await db('tasks')
     .where({ id: parseInt(id) })
     .update(updateData);
 
-  const updatedTask = await knex('tasks').where({ id: parseInt(id) }).first();
+  const updatedTask = await db('tasks').where({ id: parseInt(id) }).first();
 
   res.json({
     message: 'Task updated successfully',
@@ -151,7 +148,7 @@ const destroy = async (req, res) => {
     throw new ValidationError('Invalid task ID');
   }
 
-  const deletedCount = await knex('tasks')
+  const deletedCount = await db('tasks')
     .where({ id: parseInt(id), user_id: req.user.id })
     .del();
 

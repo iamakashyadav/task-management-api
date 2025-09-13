@@ -3,10 +3,10 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 const isProd = () => {
-    return process.env.environment === 'prod';
+  return process.env.NODE_ENV === 'prod';
 }
 
 export {
-    asyncHandler,
-    isProd,
+  asyncHandler,
+  isProd,
 }
