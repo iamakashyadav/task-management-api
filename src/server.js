@@ -12,6 +12,8 @@ import { isProd } from './helper.js';
 import requestId from './middlewares/requestId.js';
 import logger from './middlewares/logger.js';
 import { testDatabaseConnection } from './db/connection.js';
+import swaggerUI from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 const app = express();
 
@@ -22,7 +24,16 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestId);
 app.use(logger);
 
+// to get the swagger api docs
+const swaggerDocument = YAML.load('./swagger.yaml');
+
 // Routes
+app.get('/', (req, res) => {
+  res.redirect('/api-docs');
+});
+
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+
 app.use("/users", userRouter);
 app.use("/tasks", authenticate, taskRouter);
 
